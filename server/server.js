@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
@@ -7,12 +9,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// БД
 const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "2005Asdf",
-  database: "flowtrack",
+  host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
+  port: process.env.MYSQLPORT,
 });
 
 db.connect((err) => {
@@ -23,13 +25,10 @@ db.connect((err) => {
   }
 });
 
-// 🔎 Проверка
 app.get("/", (req, res) => {
   res.send("Server works");
 });
 
-//  AUTH 
-// REGISTER
 app.post("/api/register", (req, res) => {
   const { name, email, password } = req.body;
 
@@ -60,7 +59,6 @@ app.post("/api/register", (req, res) => {
   );
 });
 
-// LOGIN
 app.post("/api/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -79,9 +77,6 @@ app.post("/api/login", (req, res) => {
   );
 });
 
-//TRANSACTIONS
-
-// GET
 app.get("/api/transactions/:userId", (req, res) => {
   const userId = req.params.userId;
 
@@ -99,7 +94,6 @@ app.get("/api/transactions/:userId", (req, res) => {
   );
 });
 
-// ADD
 app.post("/api/transactions", (req, res) => {
   const { user_id, amount, category, type } = req.body;
 
@@ -117,7 +111,6 @@ app.post("/api/transactions", (req, res) => {
   );
 });
 
-//DELETE
 app.delete("/api/transactions/:id", (req, res) => {
   const id = req.params.id;
 
@@ -135,7 +128,6 @@ app.delete("/api/transactions/:id", (req, res) => {
   );
 });
 
-// Запуск
 app.listen(5000, () => {
   console.log("Server running on port 5000");
 });
