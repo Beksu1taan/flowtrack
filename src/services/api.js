@@ -1,4 +1,4 @@
-const BASE = "http://localhost:5000/api";
+const BASE = "https://flowtrack-production-4951.up.railway.app/api";
 
 // AUTH
 export const loginUser = async (data) => {
