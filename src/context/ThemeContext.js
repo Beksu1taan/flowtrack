@@ -11,11 +11,11 @@ export function ThemeProvider({ children }) {
     return localStorage.getItem("theme") || "dark";
   });
 
-  // применение темы + плавность
+  // применение темы
   useEffect(() => {
     document.body.setAttribute("data-theme", theme);
 
-    // включаем плавность после первой загрузки
+    //плавность после первой загрузки
     requestAnimationFrame(() => {
       document.body.classList.add("theme-ready");
     });

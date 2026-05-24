@@ -9,9 +9,12 @@ function Transactions() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
 
-  const safeTransactions = transactions || [];
+  // ✅ FIX
+  const safeTransactions = useMemo(() => {
+    return transactions || [];
+  }, [transactions]);
 
-  // фильтр + поиск (useMemo)
+  // фильтр + поиск
   const filtered = useMemo(() => {
     return safeTransactions.filter((t) => {
       const matchText =
@@ -19,7 +22,9 @@ function Transactions() {
         String(t.amount).includes(search);
 
       const matchType =
-        typeFilter === "all" ? true : t.type === typeFilter;
+        typeFilter === "all"
+          ? true
+          : t.type === typeFilter;
 
       return matchText && matchType;
     });
@@ -29,14 +34,12 @@ function Transactions() {
     <div className="content">
       <h2>Transactions</h2>
 
-      {/* 🔍 SEARCH */}
       <input
         placeholder="Search..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
 
-      {/* 🔽 FILTER */}
       <select
         value={typeFilter}
         onChange={(e) => setTypeFilter(e.target.value)}
@@ -46,23 +49,23 @@ function Transactions() {
         <option value="expense">Expense</option>
       </select>
 
-      {/* ⏳ LOADING */}
       {loading && <p>Loading...</p>}
 
-      {/* ❌ ERROR */}
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && (
+        <p style={{ color: "red" }}>{error}</p>
+      )}
 
-      {/* 📭 EMPTY */}
       {!loading && filtered.length === 0 && (
         <p>No transactions found</p>
       )}
 
-      {/* 📋 LIST */}
       {filtered.map((t) => (
         <div
           key={t.id}
           className="list-item"
-          onClick={() => navigate(`/transaction/${t.id}`)}
+          onClick={() =>
+            navigate(`/transaction/${t.id}`)
+          }
           style={{ cursor: "pointer" }}
         >
           <div>

@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { useTx } from "../context/TransactionsContext";
+
 import {
+  ResponsiveContainer,
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
@@ -12,50 +12,70 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  ResponsiveContainer,
 } from "recharts";
 
 function Analytics() {
   const { transactions } = useTx();
-  const tx = transactions || [];
+
+  // ✅ FIX ESLINT
+  const tx = useMemo(() => {
+    return transactions || [];
+  }, [transactions]);
+
   const totals = useMemo(() => {
     let income = 0;
     let expense = 0;
 
     tx.forEach((t) => {
-      if (t.type === "income") income += +t.amount;
-      else expense += +t.amount;
+      if (t.type === "income") {
+        income += Number(t.amount);
+      } else {
+        expense += Number(t.amount);
+      }
     });
 
     return { income, expense };
   }, [tx]);
 
-  const monthly = useMemo(() => {
+  const monthlyData = useMemo(() => {
     const map = {};
 
     tx.forEach((t) => {
-      const m = new Date().toLocaleString("en", { month: "short" });
+      const date = new Date(t.date || Date.now());
 
-      if (!map[m]) map[m] = { income: 0, expense: 0 };
+      const month = date.toLocaleString("en", {
+        month: "short",
+      });
 
-      if (t.type === "income") map[m].income += +t.amount;
-      else map[m].expense += +t.amount;
+      if (!map[month]) {
+        map[month] = {
+          month,
+          income: 0,
+          expense: 0,
+        };
+      }
+
+      if (t.type === "income") {
+        map[month].income += Number(t.amount);
+      } else {
+        map[month].expense += Number(t.amount);
+      }
     });
 
-    return Object.entries(map).map(([month, v]) => ({
-      month,
-      ...v,
-    }));
+    return Object.values(map);
   }, [tx]);
 
-  const categories = useMemo(() => {
+  const categoryData = useMemo(() => {
     const map = {};
 
     tx.forEach((t) => {
       if (t.type !== "expense") return;
 
-      if (!map[t.category]) map[t.category] = 0;
-      map[t.category] += +t.amount;
+      if (!map[t.category]) {
+        map[t.category] = 0;
+      }
+
+      map[t.category] += Number(t.amount);
     });
 
     return Object.entries(map).map(([name, value]) => ({
@@ -64,108 +84,197 @@ function Analytics() {
     }));
   }, [tx]);
 
-  const COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#a855f7"];
-
   const insights = useMemo(() => {
     const msgs = [];
 
-    const totalExpense = totals.expense;
-
-    if (totalExpense > totals.income) {
-      msgs.push("🚨 You are spending more than you earn!");
+    if (totals.expense > totals.income) {
+      msgs.push("🚨 You spend more than you earn");
     }
 
-    if (totalExpense < totals.income * 0.7) {
-      msgs.push("Great job! You're saving money");
+    if (totals.expense < totals.income * 0.7) {
+      msgs.push("✅ Great job! Your savings rate is strong");
     }
 
-    categories.forEach((c) => {
-      if (c.value > totalExpense * 0.3) {
-        msgs.push(`High spending on ${c.name}`);
+    categoryData.forEach((c) => {
+      if (c.value > totals.expense * 0.35) {
+        msgs.push(`⚠️ High spending detected in ${c.name}`);
       }
     });
 
-    const forecast = totalExpense * 1.15;
+    const predicted = totals.expense * 1.12;
 
-    msgs.push(`Forecast: ~${forecast.toFixed(0)} this month`);
+    msgs.push(
+      `📉 Predicted monthly spending: ~${predicted.toFixed(0)}`
+    );
 
     return msgs;
-  }, [totals, categories]);
+  }, [totals, categoryData]);
+
+  const COLORS = [
+    "#3b82f6",
+    "#22c55e",
+    "#f59e0b",
+    "#ef4444",
+    "#a855f7",
+    "#06b6d4",
+  ];
 
   return (
     <div className="content">
-      <h2>Analytics Dashboard</h2>
+      <h1 style={{ marginBottom: "30px" }}>
+        Analytics Dashboard
+      </h1>
 
-      {/* 💰 CARDS */}
       <div className="cards">
         <div className="card">
-          <h3>Income</h3>
-          <p className="green">{totals.income}</p>
+          <h3>Total Income</h3>
+
+          <h1 className="green">
+            ₸ {totals.income.toLocaleString()}
+          </h1>
         </div>
 
         <div className="card">
-          <h3>Expenses</h3>
-          <p className="red">{totals.expense}</p>
+          <h3>Total Expenses</h3>
+
+          <h1 className="red">
+            ₸ {totals.expense.toLocaleString()}
+          </h1>
+        </div>
+
+        <div className="card">
+          <h3>Balance</h3>
+
+          <h1 className="blue">
+            ₸ {(totals.income - totals.expense).toLocaleString()}
+          </h1>
         </div>
       </div>
 
-      {/* 📈 AREA */}
       <div className="box">
-        <h3>Monthly Trend</h3>
+        <h2 style={{ marginBottom: "20px" }}>
+          Monthly Spending Trend
+        </h2>
 
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={monthly}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
+        <ResponsiveContainer width="100%" height={350}>
+          <AreaChart data={monthlyData}>
+            <defs>
+              <linearGradient
+                id="colorExpense"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop
+                  offset="5%"
+                  stopColor="#ef4444"
+                  stopOpacity={0.3}
+                />
 
-            <Area dataKey="income" stroke="#22c55e" fill="#22c55e" />
-            <Area dataKey="expense" stroke="#ef4444" fill="#ef4444" />
+                <stop
+                  offset="95%"
+                  stopColor="#ef4444"
+                  stopOpacity={0}
+                />
+              </linearGradient>
+            </defs>
+
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#334155"
+              vertical={false}
+            />
+
+            <XAxis
+              dataKey="month"
+              stroke="#94a3b8"
+              tickLine={false}
+              axisLine={false}
+            />
+
+            <YAxis
+              stroke="#94a3b8"
+              tickLine={false}
+              axisLine={false}
+            />
+
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#1e293b",
+                border: "none",
+                borderRadius: "8px",
+              }}
+              itemStyle={{
+                color: "#fff",
+              }}
+            />
+
+            <Area
+              type="monotone"
+              dataKey="expense"
+              stroke="#ef4444"
+              strokeWidth={3}
+              fillOpacity={1}
+              fill="url(#colorExpense)"
+            />
           </AreaChart>
         </ResponsiveContainer>
       </div>
 
-      {/* 📊 BAR */}
       <div className="box">
-        <h3>Income vs Expense</h3>
+        <h2 style={{ marginBottom: "20px" }}>
+          Spending by Category
+        </h2>
 
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={monthly}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
-
-            <Bar dataKey="income" fill="#22c55e" />
-            <Bar dataKey="expense" fill="#ef4444" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* 🥧 PIE */}
-      <div className="box">
-        <h3>Spending by Category</h3>
-
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={350}>
           <PieChart>
-            <Pie data={categories} dataKey="value" outerRadius={100}>
-              {categories.map((c, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+            <Pie
+              data={categoryData}
+              dataKey="value"
+              nameKey="name"
+              outerRadius={120}
+              label
+            >
+              {categoryData.map((entry, index) => (
+                <Cell
+                  key={index}
+                  fill={COLORS[index % COLORS.length]}
+                />
               ))}
             </Pie>
+
             <Tooltip />
           </PieChart>
         </ResponsiveContainer>
       </div>
 
-      {/* 🤖 INSIGHTS */}
       <div className="box">
-        <h3>Smart Insights</h3>
+        <h2 style={{ marginBottom: "20px" }}>
+          AI Financial Insights
+        </h2>
 
-        {insights.map((m, i) => (
-          <p key={i}>{m}</p>
-        ))}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "14px",
+          }}
+        >
+          {insights.map((msg, index) => (
+            <div
+              key={index}
+              style={{
+                padding: "14px",
+                borderRadius: "12px",
+                background: "#0f172a",
+                border: "1px solid #1e293b",
+              }}
+            >
+              {msg}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

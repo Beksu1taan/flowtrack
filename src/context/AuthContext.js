@@ -14,12 +14,12 @@ export function AuthProvider({ children }) {
 
   const login = (userData) => {
     localStorage.setItem("user", JSON.stringify(userData));
-    setUser(userData); // 🔥 ВАЖНО
+    setUser(userData);
   };
 
   const logout = () => {
     localStorage.removeItem("user");
-    setUser(null); // 🔥 ВАЖНО
+    setUser(null); 
   };
 
   return (
