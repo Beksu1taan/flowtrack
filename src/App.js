@@ -21,9 +21,12 @@ function App() {
   if (!user) {
     return (
       <Routes>
+        <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="*" element={<NotFound />} /> {/* 🔥 */}
+
+        {/* fallback */}
+        <Route path="*" element={<Login />} />
       </Routes>
     );
   }
@@ -42,7 +45,7 @@ function App() {
           <Route path="/forecast" element={<ForecastPage />} />
           <Route path="/settings" element={<Settings />} />
 
-          {/* 🔥 404 */}
+          {/* 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
